@@ -1,6 +1,8 @@
 ---
 title: "Test_class"
 output: word_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -42,4 +44,30 @@ Mean = c(mean(cars$speed), mean(cars$dist))
 df = cbind.data.frame(Variable, Mean)
 
 kable(df, digits = 0)
+```
+
+\pagebreak
+
+```{r}
+library(flextable)
+ft = flextable(df)
+ft
+class(ft)
+
+italic(ft, i = 1)
+ft2 <- italic(ft, j = 2)
+color(ft2, ~ Mean > 40, ~ Mean, color = "red2")
+
+```
+
+
+## New themes
+
+```{r}
+theme_booktabs(ft2)
+
+```
+
+```{r}
+theme_tron_legacy(ft2)
 ```

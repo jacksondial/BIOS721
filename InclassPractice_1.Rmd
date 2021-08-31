@@ -1,0 +1,109 @@
+---
+title: "Markdown In-Class Exercise"
+author: "Jackson Dial"
+date: "8/31/2021"
+output: word_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = F,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(knitr)
+library(flextable)
+library(tidyverse)
+```
+
+## Introduction
+
+This exercise will use the **CO2** dataset, which is part of base R. The CO2 dataset is taken from an experiment on the cold tolerance of the grass species _Echinochloa crus-galli_.
+
+The CO2 dataset has 84 rows and 5 variables, including:
+
+1. Plant ID
+2. Plant origin
+3. Treatment group
+4. Ambient carbon dioxide concentration (mL/L)
+5. CO2 uptake rate ( _umol/m_^2 sec)  
+
+
+## Data Details
+
+* There are 12 different plant IDs in this dataset
+
+* There are 2 plant origins:
+  + Quebec
+  + Mississippi
+
+* There are 2 treatment groups:
+  + Chilled
+  + Nonchilled
+
+\pagebreak
+  
+## Results
+
+The overall mean ambient carbon dioxide concentration was 435mL/L and the overall mean CO2 uptake rate was 27.21 _umol/m_^2 sec. Means by treatment and origin can be found in Table 1.
+
+Making a table with kable:
+
+```{r}
+Names <- c("Quebec", "Mississippi", "chilled", "nonchilled")
+Mean <- c(mean(CO2[CO2$Type == "Quebec",]$uptake),
+               mean(CO2[CO2$Type == "Mississippi",]$uptake),
+                    mean(CO2[CO2$Treatment == "chilled",]$uptake),
+                         mean(CO2[CO2$Treatment == "nonchilled",]$uptake)
+
+)
+
+SD <- c(sd(CO2[CO2$Type == "Quebec",]$uptake),
+               sd(CO2[CO2$Type == "Mississippi",]$uptake),
+                    sd(CO2[CO2$Treatment == "chilled",]$uptake),
+                         sd(CO2[CO2$Treatment == "nonchilled",]$uptake)
+
+)
+
+
+
+
+df <- cbind.data.frame(Names, Mean, SD)
+
+
+kable(df, digits = 2, caption = "Table 1")
+```
+
+Making a table with flextable:
+
+```{r}
+ft = flextable(df)
+
+# color(ft, ~ SD > 10, ~ SD, color = "red2")
+# colformat_num(ft, j = c(2,3), digits = 2)
+
+
+ft %>% color(~ SD > 10, ~ SD, color = "red2") %>% 
+  colformat_double(j = c("Mean", "SD"), digits = 2) 
+```
+
+\pagebreak
+
+The figure below shows the relationship between ambient CO2 concentration and CO2 uptake in the plants
+
+```{r, echo = T}
+library(ggplot2)
+
+ggplot(data=CO2, aes(x=conc, y=uptake)) + geom_point(color=4, size=3) + labs(x="CO2 Concentration", y="CO2 Uptake", title="Figure 1. CO2 concentration and uptake") + theme_bw()
+
+```
+
+
+
+
+
