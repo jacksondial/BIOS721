@@ -19,7 +19,10 @@ knitr::opts_chunk$set(echo = TRUE)
 library(here)
 library(readr)
 library(tidyverse)
+library(pander)
+library(lubridate)
 
+library(kable)
 #Don't forget to do Lintr and Styler
 
 ```
@@ -63,12 +66,15 @@ ggplot(dat, aes(x = WBC))+
 ggplot(dat, aes(y = WBC))+
   geom_boxplot()
 
-dat %>% select(WBC) %>% filter(WBC > 30)
+dat %>% select(WBC) %>% filter(WBC > 37)
 #it does appear that there are two possible outliers, at 38.0 & 53.6
 #I am going to replace them with NA values for now but may change it later
+dat %>% select(WBC) %>% filter(WBC < 0) %>% nrow() # there are no values below 0
 
+#here I am making the two outliers discovered above NA values
 dat["WBC"][which(dat$WBC > 30),] <- NA
 
+# I have defined acceptable values to be from 0-30 ?
 
 
 
@@ -92,9 +98,226 @@ sum(is.na(dat)) #211
 
 dat %>% filter(enc_type == "Hospital Encounter") %>% nrow() #53
 sum(is.na(dat %>% filter(enc_type == "Hospital Encounter"))) #158 = 53*3 - 1 (there is one that is -999)
-#
-#there is also just a bunch of random BMI.r and WBC NA values
+
+
+#there is also just a bunch of random BMI.r and WBC NA values that don't appear to have any patterns in them. We will just leave these as they are and not bother with imputation.
 ```
+
+
+```{r}
+#round temperature to 1 decimal
+dat <- dat %>% mutate(
+  temp_rounded = round(temp, 1),
+  WBC_Cat = case_when(
+    WBC < 3.2 ~ "Low",
+    WBC < 9.8 & WBC >= 3.2 ~ "Normal",
+    WBC > 9.8 ~ "High",
+    T ~ "Not Taken"
+  )
+)
+
+```
+
+### Table of Categorical WBC
+
+```{r}
+table(dat$WBC_Cat) %>% pander()
+
+```
+
+
+
+### MRN Table
+
+```{r}
+dat %>% select(MRN, contact_date, temp_rounded) %>% 
+  filter(temp_rounded > 100) %>% 
+  arrange(MRN) %>% 
+  kable(caption = "Temperature > 100 Organized by MRN")
+```
+
+
+### Mean BMI
+
+```{r}
+dat %>% select(BMI.r, MRN) %>% 
+  filter(MRN %in% c("CI6950", "IW9164", "HJ8458", "XE4615")) %>% 
+  group_by(MRN) %>% 
+  summarise(avg_bmi = mean(BMI.r, na.rm = T)) %>% 
+  kable(digits = 1, caption = "Average BMI for Specified MRN's")
+
+
+```
+
+
+### Hospital Encounters per year
+
+```{r}
+dat %>% select(contact_date, enc_type) %>% 
+  filter(enc_type == "Hospital Encounter") %>% 
+  transmute(Year = year(mdy(contact_date))) %>% 
+  group_by(Year) %>%
+  summarise(Visits = n()) %>% 
+  kable()
+
+```
+
+### Age
+
+```{r}
+dat %>% select(DOB) %>% 
+  mutate(AgeAtStartOfCohort = floor(interval(mdy(DOB), ymd("2019-09-01"))/ years(1))) %>% 
+  summary(AgeAtStartOfCohort)
+
+
+dat %>% select(DOB) %>% 
+  mutate(AgeAtStartOfCohort = floor(time_length(interval(mdy(DOB), ymd("2019-09-01")), "years"))) %>% 
+  summary(AgeAtStartOfCohort) %>% 
+  pander()
+
+
+```
+
+
+The above table shows a 5-number summary for the age of participants. What sticks out the most is the maximum age being 130. This is unlikely and should be treated as an NA value during further analysis.
+
+
+```{r}
+dat %>% 
+  group_by(race) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  pander()
+
+dat %>% 
+  group_by(ethnicity) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  pander()
+
+dat %>% 
+  group_by(financialclass) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  pander()
+
+dat %>% 
+  group_by(hypertension) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  pander()
+
+dat %>% 
+  group_by(CHF) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  pander()
+
+dat %>% 
+  group_by(diabetes) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  pander()
+
+
+
+```
+
+```{r}
+
+
+```
+
+
+
+```{r}
+
+
+levels(as.factor(dat$race))
+
+tab1 <- dat %>% group_by(race) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  as.data.frame() %>% 
+  rename(var = race)
+
+tab2 <- dat %>% group_by(ethnicity) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  as.data.frame() %>% 
+  rename(var = ethnicity)
+
+tab3 <- dat %>% 
+  group_by(financialclass) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  as.data.frame() %>% 
+  rename(var = financialclass)
+
+tab4 <- dat %>% 
+  group_by(hypertension) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  as.data.frame() %>% 
+  rename(var = hypertension)
+
+tab5 <- dat %>% 
+  group_by(CHF) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  as.data.frame() %>% 
+  rename(var = CHF)
+
+tab6 <- dat %>% 
+  group_by(diabetes) %>% 
+  summarise(count = n()) %>% 
+  mutate(percent = count / sum(count) * 100) %>% 
+  as.data.frame() %>% 
+  rename(var = diabetes)
+
+
+
+rbind(tab1, tab2, tab3, tab4, tab5, tab6)
+
+
+
+```
+
+
+### Histogram of distress score
+
+```{r}
+ggplot(dat, aes(x = as.factor(distress_score)))+
+  geom_histogram(stat = "count", fill = "#00539B")+
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank())+
+  labs(x = "Distress Score",
+       y = "Count",
+       title = "Histogram of Distress Score",
+       subtitle = "Shown in Duke Blue")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Determine what to do with NA values
 
