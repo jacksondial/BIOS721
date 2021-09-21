@@ -8,12 +8,12 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
 ### Load Libraries
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #setwd("C:/Users/jacks/OneDrive/Desktop/DUKE_FALL2021/721/BIOS721")
 #libraries
 library(here)
@@ -22,7 +22,7 @@ library(tidyverse)
 library(pander)
 library(lubridate)
 
-library(kable)
+library(knitr)
 #Don't forget to do Lintr and Styler
 
 ```
@@ -30,7 +30,7 @@ library(kable)
 
 ## Read Data
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #setwd("C:/Users/jacks/OneDrive/Desktop/DUKE_FALL2021/721/BIOS721")
 #use here() function for better reproducibility
 patient <- read_csv(here("Data", "Patient Level Data_proj1.csv"))
@@ -42,11 +42,12 @@ dat <- encounter %>%
 
 ```
 
-### Data Cleaning
+## Data Cleaning
 
 ```{r}
 #check for any wrong values in the categorical variables
-table(dat$enc_type, dat$race) #just using table because it does 2 at a time and is less code
+table(dat$enc_type, dat$race)
+#just using table because it does 2 at a time and is less code
 table(dat$financialclass, dat$ethnicity)
 table(dat$hypertension, dat$CHF)
 levels(as.factor(dat$diabetes))
@@ -55,52 +56,81 @@ levels(as.factor(dat$diabetes))
 summary(dat)
 
 #replace impossible values with NA
-dat["BMI.r"][which(dat$BMI.r > 70),] <- NA
-dat["BMI.r"][which(dat$BMI.r < 0),] <- NA
+dat["BMI.r"][which(dat$BMI.r > 70), ] <- NA
+dat["BMI.r"][which(dat$BMI.r < 0), ] <- NA
 
 # determine if 53 is an outlier for WBC
 
-ggplot(dat, aes(x = WBC))+
+ggplot(dat, aes(x = WBC)) +
   geom_histogram()
-
-ggplot(dat, aes(y = WBC))+
+ggplot(dat, aes(y = WBC)) +
   geom_boxplot()
 
 dat %>% select(WBC) %>% filter(WBC > 37)
 #it does appear that there are two possible outliers, at 38.0 & 53.6
 #I am going to replace them with NA values for now but may change it later
-dat %>% select(WBC) %>% filter(WBC < 0) %>% nrow() # there are no values below 0
+dat %>% select(WBC) %>% filter(WBC <= 0) %>% nrow()
+# there are no values below 0, but 2 that are 0. Given the measurement
+#being in parts per thousand these will be replaced with NA values
 
 #here I am making the two outliers discovered above NA values
-dat["WBC"][which(dat$WBC > 30),] <- NA
+dat["WBC"][which(dat$WBC > 30), ] <- NA
 
-# I have defined acceptable values to be from 0-30 ?
+#replacing 'impossible' values with NA
+dat["WBC"][which(dat$WBC <= 0), ] <- NA
 
-
-
+# I have defined acceptable values to be from 0-30
 ```
 
 
-
-
-### Data Explanation
+## Data Explanation
 
 The data included in this analysis is comprised of two original data sets, one on patient data and one on encounter data. Patient data can be understood as information regarding a specific person, containing demographic information. This original dataset has 50 observations (patients) and 8 variables. The encounter dataset is a record of every time any of the 50 patients had an interaction with the Healthcare system being considered, and contains information regarding that visit such as reason for visit, date, and measurements regarding their current health status. This dataset contains 550 observations and 7 variables. A more precise description of each variable will be given below.
 
 These two described data sets were joined together on the "MRN" column, which is an acronym meaning Medical Record Number. The dimension of this data frame is 550 observations with 14 variables. 
 
+### Data Dictionary
+
+- __MRN__: Medical Record Number; an individual's personal identificaiton code
+- __contact_date__: The date that the encounter was recorded
+- __enc_type__ : The type of encounter, or visit, recorded
+- __temp__: An individual's temperature at arrival, recorded in Fahrenheit
+- __distress_score__: A score from 0-7 as reported by the patient
+- __WBC__: White blood cell count, in parts per 1,000
+- __BMI.r__: An individual's BMI score
+- __DOB__: Date of Birth
+- __race__: An individual's race with 3 levels:
+  + White
+  + Black
+  + Other
+
+- __financialclass__: An individual's healthcare status with 2 levels:
+  + Private
+  + Medicare
+
+- __ethnicity__: An individual's ethnic background with 2 levels:
+  + Hispanic
+  + Non-Hispanic
+  
+- __hypertension__: A binary variable indicating whether or not an individual has hypertension
+- __CHF__: A binary variable indicating whether or not an individual has congestive heart failure
+- __diabetes__: A binary variable indicating whether or not an individual has diabetes
+
 
 ```{r}
-sum(is.na(dat)) #211
+sum(is.na(dat)) #223
 
-#it looks like when there is a hospital encounter the distress score and wbc are NA
-#values, let's take a better look:
+#it looks like when enc_type == "Hospital Encounter" the distress score and 
+#wbc are NA values, let's take a better look:
 
-dat %>% filter(enc_type == "Hospital Encounter") %>% nrow() #53
-sum(is.na(dat %>% filter(enc_type == "Hospital Encounter"))) #158 = 53*3 - 1 (there is one that is -999)
+dat %>% filter(enc_type == "Hospital Encounter") %>% nrow() #53 total hospital encounters
+sum(is.na(dat %>% filter(enc_type == "Hospital Encounter"))) #158 = 53*3 - 1 
+#(there is one that is -999)
 
 
-#there is also just a bunch of random BMI.r and WBC NA values that don't appear to have any patterns in them. We will just leave these as they are and not bother with imputation.
+#there is also just a bunch of random BMI.r and WBC NA values that don't 
+#appear to have any patterns in them. We will just leave these as they are 
+#and not bother with imputation.
 ```
 
 
@@ -118,29 +148,32 @@ dat <- dat %>% mutate(
 
 ```
 
-### Table of Categorical WBC
+## Table of Categorical WBC
 
 ```{r}
-table(dat$WBC_Cat) %>% pander()
+table(dat$WBC_Cat) %>% 
+  pander()
 
 ```
 
 
 
-### MRN Table
+## MRN Table
 
 ```{r}
-dat %>% select(MRN, contact_date, temp_rounded) %>% 
+dat %>% 
+  select(MRN, contact_date, temp_rounded) %>% 
   filter(temp_rounded > 100) %>% 
   arrange(MRN) %>% 
   kable(caption = "Temperature > 100 Organized by MRN")
 ```
 
 
-### Mean BMI
+## Mean BMI
 
 ```{r}
-dat %>% select(BMI.r, MRN) %>% 
+dat %>% 
+  select(BMI.r, MRN) %>% 
   filter(MRN %in% c("CI6950", "IW9164", "HJ8458", "XE4615")) %>% 
   group_by(MRN) %>% 
   summarise(avg_bmi = mean(BMI.r, na.rm = T)) %>% 
@@ -150,10 +183,11 @@ dat %>% select(BMI.r, MRN) %>%
 ```
 
 
-### Hospital Encounters per year
+## Hospital Encounters per year
 
 ```{r}
-dat %>% select(contact_date, enc_type) %>% 
+dat %>% 
+  select(contact_date, enc_type) %>% 
   filter(enc_type == "Hospital Encounter") %>% 
   transmute(Year = year(mdy(contact_date))) %>% 
   group_by(Year) %>%
@@ -162,27 +196,26 @@ dat %>% select(contact_date, enc_type) %>%
 
 ```
 
-### Age
+## Age
 
 ```{r}
-dat %>% select(DOB) %>% 
-  mutate(AgeAtStartOfCohort = floor(interval(mdy(DOB), ymd("2019-09-01"))/ years(1))) %>% 
-  summary(AgeAtStartOfCohort)
-
-
-dat %>% select(DOB) %>% 
-  mutate(AgeAtStartOfCohort = floor(time_length(interval(mdy(DOB), ymd("2019-09-01")), "years"))) %>% 
-  summary(AgeAtStartOfCohort) %>% 
+age_dat <- dat %>% 
+  select(DOB) %>% 
+  mutate(AgeAtStartOfCohort = 
+           floor(time_length(interval(mdy(DOB), 
+                                      ymd("2019-09-01")), "years"))) 
+age_dat %>%   
+summary(AgeAtStartOfCohort) %>% 
   pander()
-
+sd(age_dat$AgeAtStartOfCohort)
 
 ```
 
 
-The above table shows a 5-number summary for the age of participants. What sticks out the most is the maximum age being 130. This is unlikely and should be treated as an NA value during further analysis.
+The above table shows a summary for the age of participants. What sticks out the most is the maximum age being 130. This is unlikely and should be treated as an NA value during further analysis. The standard deviation is 21.46 years, with a mean of 45.2 and median 43.
 
 
-```{r}
+```{r, include = FALSE}
 dat %>% 
   group_by(race) %>% 
   summarise(count = n()) %>% 
@@ -223,118 +256,86 @@ dat %>%
 
 ```
 
-```{r}
+```{r,include=FALSE}
+#Tried to do it another way but I don't like it
+Variable <- c("Race", "Ethnicity", "Financial Class", "Hypertension", "CHF",
+              "Diabetes")
 
-
+Level <- c(levels(as.factor(dat$race)), 
+           levels(as.factor(dat$ethnicity)),
+           levels(as.factor(dat$financialclass)),
+           levels(as.factor(dat$hypertension)),
+           levels(as.factor(dat$CHF)),
+           levels(as.factor(dat$diabetes)))
 ```
 
-
+## Patient Level Table
 
 ```{r}
-
-
-levels(as.factor(dat$race))
-
-tab1 <- dat %>% group_by(race) %>% 
+tab1 <- patient %>%
+  group_by(race) %>% 
   summarise(count = n()) %>% 
   mutate(percent = count / sum(count) * 100) %>% 
   as.data.frame() %>% 
-  rename(var = race)
+  rename(Level = race)
 
-tab2 <- dat %>% group_by(ethnicity) %>% 
+tab2 <- patient %>%
+  group_by(ethnicity) %>% 
   summarise(count = n()) %>% 
   mutate(percent = count / sum(count) * 100) %>% 
   as.data.frame() %>% 
-  rename(var = ethnicity)
+  rename(Level = ethnicity)
 
-tab3 <- dat %>% 
+tab3 <- patient %>% 
   group_by(financialclass) %>% 
   summarise(count = n()) %>% 
   mutate(percent = count / sum(count) * 100) %>% 
   as.data.frame() %>% 
-  rename(var = financialclass)
+  rename(Level = financialclass)
 
-tab4 <- dat %>% 
+tab4 <- patient %>% 
   group_by(hypertension) %>% 
   summarise(count = n()) %>% 
   mutate(percent = count / sum(count) * 100) %>% 
   as.data.frame() %>% 
-  rename(var = hypertension)
+  rename(Level = hypertension)
 
-tab5 <- dat %>% 
+tab5 <- patient %>% 
   group_by(CHF) %>% 
   summarise(count = n()) %>% 
   mutate(percent = count / sum(count) * 100) %>% 
   as.data.frame() %>% 
-  rename(var = CHF)
+  rename(Level = CHF)
 
-tab6 <- dat %>% 
+tab6 <- patient %>% 
   group_by(diabetes) %>% 
   summarise(count = n()) %>% 
   mutate(percent = count / sum(count) * 100) %>% 
   as.data.frame() %>% 
-  rename(var = diabetes)
+  rename(Level = diabetes)
 
 
+Variable <- c("Race", "Race", "Race", "Ethnicity","Ethnicity", 
+              "Financial Class", "Financial Class", "Hypertension", 
+              "Hypertension", "CHF", "CHF", "Diabetes", "Diabetes")
 
-rbind(tab1, tab2, tab3, tab4, tab5, tab6)
 
-
+cbind(Variable,(rbind(tab1, tab2, tab3, tab4, tab5, tab6))) %>% pander()
 
 ```
 
 
-### Histogram of distress score
+## Histogram of distress score
 
 ```{r}
-ggplot(dat, aes(x = as.factor(distress_score)))+
-  geom_histogram(stat = "count", fill = "#00539B")+
+ggplot(dat, aes(x = as.factor(distress_score))) +
+  geom_histogram(stat = "count", fill = "#00539B") +
   theme(panel.grid.minor = element_blank(),
-        panel.grid.major.x = element_blank())+
+        panel.grid.major.x = element_blank()) +
   labs(x = "Distress Score",
        y = "Count",
        title = "Histogram of Distress Score",
        subtitle = "Shown in Duke Blue")
-
-
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Determine what to do with NA values
-
-```{r}
-dat %>% filter(BMI.r < 70 & BMI.r > 0) %>% 
-  ggplot(aes(x = BMI.r))+
-  geom_histogram()+
-  geom_vline(xintercept = mean(dat$BMI.r, na.rm = T), col = "red")+
-  geom_vline(xintercept = median(dat$BMI.r, na.rm = T), col = "dodgerblue")
-
-
-
-
-```
-
-
-
-
 
 
