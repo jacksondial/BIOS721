@@ -104,6 +104,5 @@ ggplot(data=CO2, aes(x=conc, y=uptake)) + geom_point(color=4, size=3) + labs(x="
 ```
 
 
-
-
+$\sigma_Y^2$
 
