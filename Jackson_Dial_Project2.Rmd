@@ -31,92 +31,67 @@ glimpse(gapminder)
 
 ```{r}
 sum(is.na(gapminder)) #there are no NA values in the dataframe, lucky me
-
 ```
 
 ## First Plot
 
 ```{r}
-
-df1 <- gapminder %>% 
-  filter(year == 1997) %>% 
-  group_by(continent) %>% 
+df1 <- gapminder %>%
+  filter(year == 1997) %>%
+  group_by(continent) %>%
   summarise(AvgPop = mean(pop),
             SD = sd(pop),
-         upper = mean(pop) + 1.96 * (sd(pop) / sqrt(n())),
-         lower = mean(pop) - 1.96 * (sd(pop) / sqrt(n()))) 
+            upper = mean(pop) + 1.96 * (sd(pop) / sqrt(n())),
+            lower = mean(pop) - 1.96 * (sd(pop) / sqrt(n())))
 
-
-
-ggplot(df1, aes(continent, AvgPop, col = continent))+
-  geom_linerange(aes(ymin = lower, ymax = upper))+
-  geom_point(size = 4)+
-  scale_color_manual(values = wes_palette("Cavalcanti1", n = 5, type = "discrete"))+
+ggplot(df1, aes(continent, AvgPop, col = continent)) +
+  geom_linerange(aes(ymin = lower, ymax = upper)) +
+  geom_point(size = 4) +
+  scale_color_manual(values =
+                       wes_palette("Cavalcanti1", n = 5, type = "discrete")) +
   labs(x = "Continent",
        y = "Population Size",
-       title = "Population Size by Continent (1997)")+
-  theme(legend.position = "none")+
+       title = "Population Size by Continent (1997)") +
+  theme(legend.position = "none") +
   theme_classic()
-
-
 ```
 
 ## Second Plot
 
 ```{r}
-df2 <- gapminder %>% 
-  filter(year == 1997) %>% 
+df2 <- gapminder %>%
+  filter(year == 1997) %>%
   mutate(dummyVar = 1)
   
-ggplot(df2)+
-  geom_point(aes(x = gdpPercap, y = lifeExp, col = continent, size = pop))+
-  scale_color_brewer(palette = "Dark2")+
-  guides(size = "none")+
+ggplot(df2) +
+  geom_point(aes(x = gdpPercap, y = lifeExp, col = continent, size = pop)) +
+  scale_color_brewer(palette = "Dark2") +
+  guides(size = "none") +
   labs(x = "GDP per capita ($)",
        y = "Life Expectancy (years)",
        col = "Continent",
-       title = "Life Expectancy by GDP (1997)")+
+       title = "Life Expectancy by GDP (1997)") +
   theme_bw()
 ```
 
 ## Third Plot
 
 ```{r}
-df3 <- gapminder %>% 
+df3 <- gapminder %>%
   filter(country %in% c("Denmark", "Peru", "Botswana", "Mongolia"))
 
-ggplot(df3, aes(x = gdpPercap, y = lifeExp))+
-  geom_point(aes(col = as.factor(year)))+
-  facet_wrap(~country, scales = "free")+
-  scale_color_brewer(palette = "Paired")
-
-ggplot(df3, aes(x = gdpPercap, y = lifeExp, group = country))+
-  geom_point(aes(col = country))+
-  geom_line(aes(col = country))+
-  facet_wrap(~country, scales = "free")
-
-ggplot(df3, aes(x = gdpPercap, y = lifeExp))+
-  geom_point(aes(alpha = year, col = country, size = 4), shape = 16)
-
-
-ggplot(df3, aes(x = gdpPercap, y = lifeExp))+
-  geom_point(aes(col = as.factor(year)))+
-  facet_wrap(~country, scales = "free")+
-  scale_fill_gradientn(colors = wes_palette("Zissou1", 12, type = "continuous"))+
+ggplot(df3, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(col = as.factor(year))) +
+  facet_wrap(~country, scales = "free") +
+  scale_fill_gradientn(colors =
+                         wes_palette("Zissou1", 12, type = "continuous")) +
   labs(x = "GDP Per Capita ($)",
        y = "Life Expectancy (Years)",
        title = "Life Expectancy by GDP for 4 Countries",
        subtitle = "*Notice Difference in Axes*",
-       col = "Year")+
+       col = "Year") +
   theme(axis.text.x = element_text(angle = 30),
         panel.grid.minor = element_blank(),
         axis.ticks = element_blank(),
         plot.subtitle = element_text(size = 9))
-
-ggplot(df3, aes(x = gdpPercap, y = lifeExp))+
-  geom_point()+
-  facet_wrap(~year)
-
 ```
-
-
