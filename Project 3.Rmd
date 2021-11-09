@@ -1,0 +1,32 @@
+---
+title: "Project 3"
+author: "Jackson Dial"
+date: "11/9/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#setwd("C:/Users/jacks/OneDrive/Desktop/DUKE_FALL2021/721/BIOSTAT721")
+dat18 <- read.csv("Data/data/data/AQ_2018.csv")
+dat19 <- read.csv("Data/data/data/AQ_2019.csv")
+dat20 <- read.csv("Data/data/data/AQ_2020.csv")
+
+```
+
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
