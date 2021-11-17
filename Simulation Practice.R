@@ -47,3 +47,22 @@ table(matches)
 
 prob10tag <- sum(matches == 10) / runs
 prob10tag
+
+
+
+########################################################
+
+seed <- 102
+theta <- 10
+n <- 50
+
+samp <- runif(n, min = 0, max = theta)
+t1 <- max(samp)
+t2 <- 2*mean(samp)
+
+set.seed(seed)
+t1 <- rep(NA, no.runs)
+t2 <- rep(NA, no.runs)
+
+
+
