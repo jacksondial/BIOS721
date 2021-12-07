@@ -1,0 +1,257 @@
+---
+title: "Final Project"
+author: "Jackson Dial"
+date: "11/23/2021"
+output: word_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(Hmisc)
+library(tidyverse)
+library(tictoc)
+library(flextable)
+library(here)
+```
+
+
+## Part 1
+
+```{r}
+set.seed(23)
+
+myfun1 <- function(n, theta, method, runs){
+  #for the number of successes
+  myvec <- c()
+  
+  results <- matrix(NA, nrow = runs, ncol = 3)
+  
+    for(i in 1:runs){
+      myvec[i] <- rbinom(1, n, theta)
+      results[i,] <- binconf(myvec[i], n, .05, method = method)
+    }
+    
+  colnames(results) <- c("Estimate", "Lower", "Upper")
+  resultsdf <- as.data.frame(results)
+  
+  df2 <- resultsdf %>% 
+    filter(Lower < theta & Upper > theta)
+  
+  width <- sum(resultsdf$Upper - resultsdf$Lower) / runs
+  
+   return(c(
+    "Coverage Probability" = length(df2$Upper) / runs,
+    "Average Width" = round(sum(resultsdf$Upper - resultsdf$Lower) / runs, digits = 4
+  )))
+}
+```
+
+
+```{r}
+tic()
+f1 <- myfun1(n = 20, theta = .05, method = "asymptotic", runs = 10000)
+f2 <- myfun1(n = 40, theta = .05, method = "asymptotic", runs = 10000)
+f3 <- myfun1(n = 100, theta = .05, method = "asymptotic", runs = 10000)
+
+f4 <- myfun1(n = 20, theta = .05, method = "wilson", runs = 10000)
+f5 <- myfun1(n = 40, theta = .05, method = "wilson", runs = 10000)
+f6 <- myfun1(n = 100, theta = .05, method = "wilson", runs = 10000)
+
+f7 <- myfun1(n = 20, theta = .05, method = "exact", runs = 10000)
+f8 <- myfun1(n = 40, theta = .05, method = "exact", runs = 10000)
+f9 <- myfun1(n = 100, theta = .05, method = "exact", runs = 10000)
+
+f10 <- myfun1(n = 20, theta = .15, method = "asymptotic", runs = 10000)
+f11 <- myfun1(n = 40, theta = .15, method = "asymptotic", runs = 10000)
+f12 <- myfun1(n = 100, theta = .15, method = "asymptotic", runs = 10000)
+
+f13 <- myfun1(n = 20, theta = .15, method = "wilson", runs = 10000)
+f14 <- myfun1(n = 40, theta = .15, method = "wilson", runs = 10000)
+f15 <- myfun1(n = 100, theta = .15, method = "wilson", runs = 10000)
+
+f16 <- myfun1(n = 20, theta = .15, method = "exact", runs = 10000)
+f17 <- myfun1(n = 40, theta = .15, method = "exact", runs = 10000)
+f18 <- myfun1(n = 100, theta = .15, method = "exact", runs = 10000)
+toc()
+```
+
+### Make Table
+
+```{r}
+#coverage probability = [1], average width = [2] 
+
+col1 <- rbind("Asymptotic (p = 0.05)", "N = 20", "N = 40", "N = 100",
+              "Wilson (p = 0.05)", "N = 20", "N = 40", "N = 100",
+              "Exact (p = 0.05)", "N = 20", "N = 40", "N = 100",
+              "Asymptotic (p = 0.15)", "N = 20", "N = 40", "N = 100",
+              "Wilson (p = 0.15)", "N = 20", "N = 40", "N = 100",
+              "Exact (p = 0.15)", "N = 20", "N = 40", "N = 100")
+
+col2 <- rbind("", f1[1], f2[1], f3[1],
+              "", f4[1], f5[1], f6[1],
+              "", f7[1], f8[1], f9[1],
+              "", f10[1], f11[1], f12[1],
+              "", f13[1], f14[1], f15[1],
+              "", f16[1], f17[1], f18[1])
+
+col3 <- rbind("", f1[2], f2[2], f3[2],
+              "", f4[2], f5[2], f6[2],
+              "", f7[2], f8[2], f9[2],
+              "", f10[2], f11[2], f12[2],
+              "", f13[2], f14[2], f15[2],
+              "", f16[2], f17[2], f18[2])
+
+tab1 <- cbind(col1, col2, col3)
+
+df1 <- as.data.frame(tab1) %>% 
+  rename(Type = V1)
+
+flextable(df1)
+
+```
+
+
+### Make Plots
+
+```{r}
+type <- c(rep("asymptotic", 3), rep("wilson", 3), rep("exact", 3), rep("asymptotic", 3), rep("wilson", 3), rep("exact", 3)) %>% 
+  as.data.frame() %>% 
+  rename(type = ".")
+
+N <- rbind(20,40,100,20,40,100,20,40,100,20,40,100,20,40,100,20,40,100)
+
+covprob <- rbind(
+  f1[1], f2[1], f3[1],
+  f4[1], f5[1], f6[1],
+  f7[1], f8[1], f9[1],
+  f10[1], f11[1], f12[1],
+  f13[1], f14[1], f15[1],
+  f16[1], f17[1], f18[1]
+              )
+
+avgwidth <- rbind(
+  f1[2], f2[2], f3[2],
+  f4[2], f5[2], f6[2],
+  f7[2], f8[2], f9[2],
+  f10[2], f11[2], f12[2],
+  f13[2], f14[2], f15[2],
+  f16[2], f17[2], f18[2]
+)
+
+theta <- rbind(.05,.05,.05,.05,.05,.05,.05,.05,.05,.15,.15,.15,.15,.15,.15,.15,.15,.15)
+
+plotdf <- cbind(type, N, theta, covprob, avgwidth) %>% as.data.frame() %>% 
+  rename(covprob = `Coverage Probability`,
+         avgwidth = `Average Width`)
+
+```
+
+
+```{r}
+#plot for coverage probability
+ggplot(plotdf, aes(x = as.factor(N), y = covprob))+
+  geom_point(aes(col = as.factor(type)), size = 4, alpha = .5)+
+  facet_wrap(~as.factor(theta), scales = "free")+
+  theme(panel.grid.minor = element_blank())+
+  labs(x = "Sample Size",
+       y = "Coverage Probability",
+       title = "Comparing Coverage Probability Amongst Methods/Sample Sizes",
+       col = "Method")
+
+
+
+#Plot for interval width
+ggplot(plotdf, aes(x = as.factor(N), y = avgwidth))+
+  geom_point(aes(col = as.factor(type)), size = 5, alpha = .5)+
+  facet_wrap(~theta, labeller = label_both)+
+  theme(panel.grid.minor = element_blank())+
+  labs(x = "Sample Size",
+       y = "Interval Width",
+       title = "Comparing Average Interval Width Amongst Methods/Sample Sizes",
+       col = "Method")
+
+```
+
+## Part 2
+
+Based on the results of the simulation, I would choose the Wilson method. It is clear in the plot of coverage probability that exact has the highest of all 3 methods, but the Wilson method is always close, but it also always has a smaller average interval width, which is favorable.
+
+\pagebreak
+
+## Part 3
+
+```{r}
+dat <- read_csv(here("Data", "mortality_data.csv"))
+
+summary(dat)
+levels(as.factor(dat$sex))
+dat_clean <- dat %>% 
+  filter(sex %in% c("M", "F"))
+sum(is.na(dat_clean))
+#one observation has been removed from the original df due to an invalid data value
+```
+
+### CI
+
+```{r}
+x <- dat_clean %>% 
+  filter(death == 1) %>% 
+  nrow()
+x
+n <- dat_clean %>% 
+  nrow()
+n
+x/n
+
+wci <- binconf(x, n, alpha = .05, method = "wilson")
+wci
+```
+
+### Men CI
+
+```{r}
+datM <- dat_clean %>% 
+  filter(sex == "M")
+
+xm <- datM %>% 
+  filter(death == 1) %>% 
+  nrow()
+nm <- datM %>% 
+  nrow()
+xm/nm
+
+wcim <- binconf(xm,nm, .05, "wilson")
+wcim
+```
+
+### Women CI
+
+```{r}
+datF <- dat_clean %>% 
+  filter(sex == "F")
+
+xf <- datF %>% 
+  filter(death == 1) %>% 
+  nrow()
+nf <- datF %>% 
+  nrow()
+xf/nf
+
+wcif <- binconf(xf,nf, .05, "wilson")
+wcif
+```
+
+### Table
+
+```{r}
+
+
+
+```
+
+
